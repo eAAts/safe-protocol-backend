@@ -2,13 +2,15 @@ import { ethers } from "ethers";
 import Safe, { EthersAdapter, SafeFactory, SafeAccountConfig, } from "@safe-global/protocol-kit";
 import dotenv from "dotenv";
 import SafeApiKit from "@safe-global/api-kit";
-import { SafeTransactionDataPartial, SafeTransaction, SafeMultisigTransactionResponse } from "@safe-global/safe-core-sdk-types";
+import { SafeTransactionDataPartial, SafeTransaction, SafeMultisigTransactionResponse, TransactionOptions } from "@safe-global/safe-core-sdk-types";
 
 dotenv.config();
 
 // 1. Initialize Signers, Providers, and EthAdapter
 const RPC_URL = "https://ethereum-goerli.publicnode.com";
+// const RPC_URL = "https://polygon-rpc.com";
 const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+// const web3Provider = new ethers.providers.Web3Provider()
 
 const owner1Signer = new ethers.Wallet(process.env.OWNER_1_PRIVATE_KEY!, provider);
 const owner2Signer = new ethers.Wallet(process.env.OWNER_2_PRIVATE_KEY!, provider);
@@ -22,8 +24,13 @@ const ethAdapterOwner2 = new EthersAdapter({
     signerOrProvider: owner2Signer,
 });
 
+// const user = "0xF656b0BEfAa46e15625E3CCeeC91F9919f035b69"; // goerli user
+// const user = "0x98f2738Cf1784471554aDf2D850131Eb0f415b53"; // polygon mainnet user
+const user = "0x095Fae86235B07CAEa0E98188A85104DcF59F876"; // my goerli Account 9
+
 // 2. Initialize the API Kit
-const txServiceUrl = "https://safe-transaction-goerli.safe.global";
+// const txServiceUrl = "https://safe-transaction-goerli.safe.global";
+const txServiceUrl = "https://safe-transaction-polygon.safe.global";
 const safeService = new SafeApiKit({ txServiceUrl, ethAdapter: ethAdapterOwner1 });
 
 const deploySafeAA = async () => {
@@ -34,12 +41,30 @@ const deploySafeAA = async () => {
     const safeAccountConfig: SafeAccountConfig = {
         owners: [
             await owner1Signer.getAddress(),
-            await owner2Signer.getAddress(),
+            // await owner2Signer.getAddress(),
+            user
         ],
-        threshold: 2,
+        threshold: 1,
     };
+    // const gasLimit = 3000000;
+    // const feeData = await provider.getFeeData();
+    // const maxFeePerGas = feeData.maxFeePerGas?.mul(2).toString();
+    // const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas?.mul(2).toString();
+    // const nonce = await provider.getTransactionCount(owner1Signer.address);
+
+    // const options: TransactionOptions = {
+    //     from: owner1Signer.address, // Optional
+    //     gasLimit, // Optional
+    //     // gasPrice, // Optional
+    //     maxFeePerGas, // Optional
+    //     maxPriorityFeePerGas, // Optional
+    //     nonce // Optional
+    // };
+    // console.log(`options:`, options);
+
 
     /* This Safe is tied to owner 1 because the factory was initialized with an adapter that had owner 1 as the signer. */
+    // const safeSdkForOwner1 = await safeFactory.deploySafe({ safeAccountConfig, options });
     const safeSdkForOwner1 = await safeFactory.deploySafe({ safeAccountConfig });
 
     return safeSdkForOwner1;
@@ -131,19 +156,20 @@ const executeTx = async (safeTxHash: string, safeSdk: Safe) => {
 const main = async () => {
     const safeSdkForOwner1 = await deploySafeAA();
     const safeAAaddr = await getSafeAddr(safeSdkForOwner1);
-    await sendEthToSafe(safeAAaddr);
-    const safeTransaction = await createTx(await owner1Signer.getAddress(), safeSdkForOwner1);
-    await proposeTx(safeTransaction, safeSdkForOwner1, safeAAaddr);
-    // get pending transactions
-    const pendingTransactions = (await safeService.getPendingTransactions(safeAAaddr)).results;
-    await confirmTx(pendingTransactions, safeAAaddr);
+    console.log(`safeAAaddr: ${safeAAaddr}`);
+    // await sendEthToSafe(safeAAaddr);
+    // const safeTransaction = await createTx(await owner1Signer.getAddress(), safeSdkForOwner1);
+    // await proposeTx(safeTransaction, safeSdkForOwner1, safeAAaddr);
+    // // get pending transactions
+    // const pendingTransactions = (await safeService.getPendingTransactions(safeAAaddr)).results;
+    // await confirmTx(pendingTransactions, safeAAaddr);
 
-    const safeTxHash = await safeSdkForOwner1.getTransactionHash(safeTransaction);
-    await executeTx(safeTxHash, safeSdkForOwner1);
+    // const safeTxHash = await safeSdkForOwner1.getTransactionHash(safeTransaction);
+    // await executeTx(safeTxHash, safeSdkForOwner1);
 
-    // Confirm that the transaction was executed
-    // You know that the transaction was executed if the balance in your Safe changes.
-    const afterBalanceAtSafeSdkForOwner1 = await safeSdkForOwner1.getBalance();
-    console.log(`The final balance of the Safe: ${ethers.utils.formatUnits(afterBalanceAtSafeSdkForOwner1, 'ether')} ETH`);
+    // // Confirm that the transaction was executed
+    // // You know that the transaction was executed if the balance in your Safe changes.
+    // const afterBalanceAtSafeSdkForOwner1 = await safeSdkForOwner1.getBalance();
+    // console.log(`The final balance of the Safe: ${ethers.utils.formatUnits(afterBalanceAtSafeSdkForOwner1, 'ether')} ETH`);
 }
 main();
