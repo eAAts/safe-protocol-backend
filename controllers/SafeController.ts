@@ -51,23 +51,23 @@ class SafeController {
 
             const feeData = await provider.getFeeData();
             // console.log(`feeData:`, feeData);
-            const gasLimit = feeData.maxFeePerGas?.toString();
-            const maxFeePerGas = feeData.maxFeePerGas?.toString();
-            const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas?.toString();
-            const nonce = await provider.getTransactionCount(owner1Signer.address);
+            const gasLimit = feeData.maxFeePerGas?.div(400).toString();
+            // const maxFeePerGas = feeData.maxFeePerGas?.toString();
+            // const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas?.toString();
+            // const nonce = await provider.getTransactionCount(owner1Signer.address);
 
             const options: TransactionOptions = {
                 from: owner1Signer.address, // Optional
                 gasLimit, // Optional
                 // gasPrice, // Optional
-                maxFeePerGas, // Optional
-                maxPriorityFeePerGas, // Optional
-                nonce // Optional
+                // maxFeePerGas, // Optional
+                // maxPriorityFeePerGas, // Optional
+                // nonce // Optional
             };
             console.log(`options:`, options);
 
             /* This Safe is tied to owner 1 because the factory was initialized with an adapter that had owner 1 as the signer. */
-            // const safeSdkForOwner1 = await safeFactory.deploySafe({ safeAccountConfig, options });
+            // const safeSdkForOwner1 = await safeFactory.deploySafe({ safeAccountConfig });
             const safeSdkForOwner1 = await safeFactory.deploySafe({ safeAccountConfig, options });
 
             // return safeSdkForOwner1;
